@@ -11,39 +11,40 @@ class Role:
 
 
 class Product:
-    
 
-    def __init__(self, name, cost, category, quantity, discount=False, profit_margin=0.1,discount_rate = 0.9 ):
+    def __init__(self, name, cost, category, quantity, discount=False, profit_margin=0.1, discount_rate = 0.9):
 
-       
+
         self.name = name
         self.category = category
         self.discount = discount
         self.quantity = quantity
+        self.profit_margin = profit_margin
         self.discount_rate = discount_rate
-        
+
+        self.actualCost = float(cost)
+        self.cost = (self.actualCost * self.profit_margin) + self.actualCost
 
         if self.discount:
-            self.actualCost = float(cost) * self.discount_rate
+            self.sellingCost = self.cost * self.discount_rate
         if not self.discount:
-            self.actualCost = float(cost)
-
-        self.cost = (self.actualCost * profit_margin) + self.actualCost
+            self.sellingCost = self.cost
 
        
+
 class Inventory:
-    dummyData = [Product('name1', 100, 'misc', 4, True, 0.1, 0.8), Product('name2', 100, 'fruit', 2),
+    #can add discount rate and profit margin for product individually, the default is 0.9 and 0.1, also set disount = True or false
+    dummyData = [Product('name1', 100, 'misc', 4, True, 0.2 ,0.9), Product('name2', 100, 'fruit', 2),
                  Product('name3', 10, 'misc', 1), Product('name4', 5, 'misc', 10, True),
-                 Product('name5', 5, 'fruit', 3, True)]  # just like with book and shelf
+                 Product('name5', 5, 'fruit', 3, True,0.5, 0.8)] 
 
     def __init__(self):
         pass
        
-
     def total_cost(self, productList):
         self.inventoryValue = 0
         for product in productList:
-            productValue = product.quantity * product.cost
+            productValue = product.quantity * product.sellingCost
             self.inventoryValue += productValue
 
         return self.inventoryValue
@@ -53,7 +54,7 @@ class Inventory:
         try:
             if user.role == 'Admin':
                 for product in productList:
-                    profitValue = (product.cost - product.actualCost)*product.quantity
+                    profitValue = (product.sellingCost - product.actualCost) * product.quantity
                     self.profit += profitValue
 
                 return self.profit
@@ -74,7 +75,10 @@ class Cart(Inventory):
     def add_item(self, name, quantity, category):
         for product in self.dummyData:
             if product.name == name and product.category == category and product.quantity >= quantity:
-                self.cart.append(Product(name, product.cost, category, quantity))
+                addProduct = Product(name=name, cost=product.actualCost, category=category, quantity=quantity,
+                                     discount=product.discount, profit_margin=product.profit_margin,
+                                      discount_rate=product.discount_rate)
+                self.cart.append(addProduct)
                 print('product added to cart!')
                 return
 
@@ -97,15 +101,18 @@ class Cart(Inventory):
         profit = cart.calculate_profit(user, cart.cart)
 
         if user.role == 'Admin':
-            print(round(profit)) #was getting a floating point error
-            print(total_cost)
+            print('=======BILL======= \n')
+            print(f'profit: {profit}')
+            print(f'total_cost: {total_cost}')
         else:
-            print(total_cost)
+            print('=======BILL======= \n')
+            print(f'total_cost: {total_cost}')
 
 
 user = Role('Admin')
+cons = Role('Consumer')
 inventory = Inventory()
 cart = Cart()
-cart.add_item('name1', 2, 'misc')
 
-cart.generateBill(user=user)
+cart.add_item('name1', 2, 'misc')
+cart.generateBill(user)
